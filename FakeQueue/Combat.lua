@@ -61,28 +61,35 @@ function Context:GetNextDebuffTickTime(spellRecord, unitID)
   local target = self:GetTarget(guid)
   local spellAura = target.spellAuras[spellRecord.spellID]
 
-  if spellAura and spellAura.expirationTime ~= nil then
-    local _, _, _, _, _, _, castTime = GetSpellInfo(spellRecord.spellID)
-    castTime = castTime or 0
-
-    local now = GetTime() * 1000
-    local nextTick = spellAura.expirationTime
-
-    for tickNumber = 1, spellRecord.ticks do
-      local tickTime = spellAura.startTime + (spellAura.tickFrequency * tickNumber)
-
-      if tickTime > now then
-        nextTick = tickTime
-        break
-      end
-    end
-
-    nextTick = nextTick - castTime
-
-    return nextTick
+  if not spellAura then
+    return 0
   end
 
-  return 0
+  local now = GetTime() * 1000
+
+  if spellAura.expirationTime <= now then
+    target.spellAuras[spellRecord.spellID] = nil
+
+    return 0
+  end
+
+  local _, _, _, _, _, _, castTime = GetSpellInfo(spellRecord.spellID)
+  castTime = castTime or 0
+
+  local nextTick = spellAura.expirationTime
+
+  for tickNumber = 1, spellRecord.ticks do
+    local tickTime = spellAura.startTime + (spellAura.tickFrequency * tickNumber)
+
+    if tickTime > now then
+      nextTick = tickTime
+      break
+    end
+  end
+
+  nextTick = nextTick - castTime
+
+  return nextTick
 end
 
 function Context:GetTarget(guid)
