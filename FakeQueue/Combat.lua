@@ -312,13 +312,17 @@ eventListeners.COMBAT_LOG_EVENT_UNFILTERED = function(
     return
   end
 
-  local filteredSpellMods = {}
+  local filteredSpellMods = spellMods
 
   for _, spellMod in pairs(spellMods) do
     local isMatch = true
 
-    if subEvent == "SPELL_MISSED" and spellMod.missType then
-      isMatch = spellMod.missType == amount
+    if spellMod.trigger.spellIDs then
+      isMatch = spellMod.trigger.spellIDs[spellID]
+    end
+
+    if isMatch and subEvent == "SPELL_MISSED" and spellMod.trigger.missType then
+      isMatch = spellMod.trigger.missType == amount
     end
 
     if isMatch then
