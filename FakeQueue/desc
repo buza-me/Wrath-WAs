@@ -1,0 +1,37 @@
+Delays your casts to prevent early channeled spell and DOT clips.
+Requires calibration for your computer.
+Negative world ping offset is more cast delay.
+Positive world ping offset is less cast delay.
+Absolute Offset does nothing unless Use World Ping Offset is disabled.
+Example for 40ms world ping: -10 offset = an Absolute Offset of 30
+
+Only test your settings while inside an instance, because the game ticks much slower when outside of an instance.
+
+Use /run FQToggle() to toggle Fake Queue Enabled on and off.
+Use /run FQCalibrate() to calibrate the freeze duration for your computer.
+Calibrate every time you enter an instance and when your processor speed changes, like a battery saver mode or overclock.
+
+Mind Flay example with spell name:
+#showtooltip
+/run FQ("Mind Flay")
+/cast Mind Flay
+
+Mind Flay example with spell name and specific rank:
+#showtooltip
+/run FQ("Mind Flay(Rank 9)")
+/cast Mind Flay(Rank 9)
+
+Mind Flay example with spell ID:
+#showtooltip
+/run FQ(48156)
+/cast Mind Flay(Rank 9)
+
+Reports fake queue delay amounts (in milliseconds) via WeakAuras.ScanEvents("WA_FAKE_QUEUE_DELAY", delay)
+Reports fake queue max delay (ms) setting via WeakAuras.ScanEvents("WA_FAKE_QUEUE_MAX_WAIT", val)
+
+Made by Solti, Whitemane-Frostmourne.
+
+Original WA by Heaviside:
+https://wago.io/7AVcaIwn7
+Original WA by ducks:
+https://wago.io/Atm6dVYpK
