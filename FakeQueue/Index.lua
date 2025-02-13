@@ -3,7 +3,7 @@ function Init()
   LibStub:NewLibrary(LIB_NAME, 1)
   local Context = LibStub(LIB_NAME)
 
-  local Timer = LibStub("AceTimer-3.0")
+  Context.Timer = LibStub("AceTimer-3.0")
 
   local env = aura_env
 
@@ -84,7 +84,7 @@ function Init()
     return offset
   end
 
-  function Context:FakeQueue(macroSpellIdentifier)
+  function Context:FakeQueue(macroSpellIdentifier, unitID)
     local config = self:GetConfig()
 
     if not config.fqEnabled then
@@ -103,11 +103,15 @@ function Init()
       return
     end
 
+    if not unitID then
+      unitID = "target"
+    end
+
     local waitTimeOffset = self:GetWaitTimeOffset()
     local channeledSpellRecord = self.channelingSpellDetails.spellRecord
     local spellRecord = self:GetSpellRecord(spellName, rankText)
     local nextChanneledTickTime = self:GetNextChannelingTickTime(channeledSpellRecord) - waitTimeOffset
-    local nextDebuffTickTime = self:GetNextDebuffTickTime(spellRecord) - waitTimeOffset
+    local nextDebuffTickTime = self:GetNextDebuffTickTime(spellRecord, unitID) - waitTimeOffset
     local maxWaitTime = self:GetMaxWait()
     local now = GetTime() * 1000
     local maxWaitUntil = now + maxWaitTime
@@ -169,6 +173,8 @@ function Init()
   end
 
   function Context:FakeQueueCalibrate()
+    local Timer = self.Timer
+
     Timer:ScheduleTimer(function()
       local frameTestStartTime = GetTime()
 
