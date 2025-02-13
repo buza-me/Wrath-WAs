@@ -213,7 +213,7 @@ end
 
 eventListeners.UNIT_COMBO_POINTS = function(eventUnitID)
   if eventUnitID ~= "player" then
-    return false
+    return
   end
 
   Context:ResetComboPoints()
@@ -225,7 +225,7 @@ eventListeners.UNIT_COMBO_POINTS = function(eventUnitID)
     if comboPoints > 0 then
       Context:SetComboPoints(unitID, comboPoints)
 
-      return false
+      return
     end
   end
 end
@@ -247,11 +247,11 @@ eventListeners.COMBAT_LOG_EVENT_UNFILTERED = function(
   if subEvent == "UNIT_DIED" then
     Context:RemoveTarget(destGUID)
 
-    return false
+    return
   end
 
   if sourceName ~= myName or destName == myName then
-    return false
+    return
   end
 
   local target = Context:GetTarget(destGUID)
@@ -308,9 +308,23 @@ eventListeners.COMBAT_LOG_EVENT_UNFILTERED = function(
   local cleuTriggers = triggers["COMBAT_LOG_EVENT_UNFILTERED"] or {}
   local spellMods = cleuTriggers[subEvent] or {}
 
-  if #spellMods > 0 then
-    Context:HandlePendingSpellMods(target, spellMods)
+  if #spellMods < 1 then
+    return
   end
 
-  return false
+  local filteredSpellMods = {}
+
+  for _, spellMod in pairs(spellMods) do
+    local isMatch = true
+
+    if subEvent == "SPELL_MISSED" and spellMod.missType then
+      isMatch = spellMod.missType == amount
+    end
+
+    if isMatch then
+      table.insert(filteredSpellMods, spellMod)
+    end
+  end
+
+  Context:HandlePendingSpellMods(target, filteredSpellMods)
 end

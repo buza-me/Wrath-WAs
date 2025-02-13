@@ -645,6 +645,7 @@ Context.spellModifications = {
       type = modTypes.aura,
       trigger = {
         event = "COMBAT_LOG_EVENT_UNFILTERED",
+        missType = "ABSORB",
         subEvent = {
           "SPELL_DAMAGE", "SPELL_MISSED",
         },
@@ -733,12 +734,13 @@ Context.spellModifications = {
       type = modTypes.auraFull,
       trigger = {
         event = "COMBAT_LOG_EVENT_UNFILTERED",
+        missType = "ABSORB",
         subEvent = {
           "SPELL_DAMAGE", "SPELL_MISSED",
         },
         spellIDs = {
           [53209] = true,
-        }
+        },
       },
       spellIDs = {
         1978, 13549, 13550,
@@ -754,6 +756,7 @@ Context.spellModifications = {
       type = modTypes.auraFull,
       trigger = {
         event = "COMBAT_LOG_EVENT_UNFILTERED",
+        missType = "ABSORB",
         subEvent = {
           "SPELL_DAMAGE", "SPELL_MISSED",
         },
