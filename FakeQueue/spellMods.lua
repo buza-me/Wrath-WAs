@@ -72,6 +72,10 @@ function Context:UpdateGlyphSpellMods()
   local spellMods = {}
   self.spellModifications.active.sources.glyphs = spellMods
 
+  if not GetGlyphSocketInfo then
+    return
+  end
+
   local maxGlyphAmount = 6
 
   for i = 1, maxGlyphAmount do
