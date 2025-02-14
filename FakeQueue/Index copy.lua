@@ -19,7 +19,7 @@ function Init()
 
   aura_env.fqEnabled = true
 
-  local LIB_NAME = "SoltiShadowPriestFakeQueueContext"
+  local LIB_NAME = "SoltiFakeQueueContext"
   LibStub:NewLibrary(LIB_NAME, 1)
   local Context = LibStub(LIB_NAME)
 

@@ -106,7 +106,8 @@
     "UnitDetailedThreatSituation",
     "UnitIsUnit",
     "UnitGroupRolesAssigned",
-    "GetComboPoints"
+    "GetComboPoints",
+    "GetTimePreciseSec"
   ],
   "Lua.diagnostics.disable": [
     "duplicate-set-field",

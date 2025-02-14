@@ -1,13 +1,13 @@
 function Init()
-  local LIB_NAME = "SoltiShadowPriestFakeQueueContext"
+  local LIB_NAME = "SoltiFakeQueueContext"
   LibStub:NewLibrary(LIB_NAME, 1)
   local Context = LibStub(LIB_NAME)
-
-  Context.Timer = LibStub("AceTimer-3.0")
-
+  local GetTime = GetTimePreciseSec or GetTime
+  local isTimePrecise = not not GetTimePreciseSec
   local env = aura_env
 
   env.Context = Context
+  Context.Timer = LibStub("AceTimer-3.0")
 
   if not Context.callbacks then
     -- DBM mod.creatureId; LichKing = 36597; Lanathel = 37955
@@ -138,7 +138,7 @@ function Init()
       nextDebuffTickTime = 0
     end
 
-    local nextTickTime = max(nextChanneledTickTime, nextDebuffTickTime)
+    local nextTickTime = math.max(nextChanneledTickTime, nextDebuffTickTime)
 
     if nextTickTime == 0 or nextTickTime <= now then
       self.log("Possible clipped ticks not found.")
@@ -161,12 +161,19 @@ function Init()
       end
     end
 
-    local loopLength = waitFor / 1000 * config.oneSecondLoopLength
-
     self:ReportFQDelay(waitFor)
 
-    for i = 1, loopLength do
-      -- nothing
+    if isTimePrecise then
+      local start = GetTime()
+
+      while ((GetTime() - start) * 1000) < waitFor do
+        -- nothing
+      end
+    else
+      local loopLength = (waitFor / 1000) * config.oneSecondLoopLength
+      for i = 1, loopLength do
+        -- nothing
+      end
     end
 
     self.log(string.format("Waited for %s MS.", waitFor))

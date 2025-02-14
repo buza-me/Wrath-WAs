@@ -1,6 +1,7 @@
-local LIB_NAME = "SoltiShadowPriestFakeQueueContext"
+local LIB_NAME = "SoltiFakeQueueContext"
 LibStub:NewLibrary(LIB_NAME, 1)
 local Context = LibStub(LIB_NAME)
+local GetTime = GetTimePreciseSec or GetTime
 
 Context.Timer = LibStub("AceTimer-3.0")
 
@@ -58,6 +59,11 @@ function Context:GetNextDebuffTickTime(spellRecord, unitID)
   end
 
   local guid = UnitGUID(unitID)
+
+  if not guid then
+    return 0
+  end
+
   local target = self:GetTarget(guid)
   local spellAura = target.spellAuras[spellRecord.spellID]
 
@@ -78,8 +84,15 @@ function Context:GetNextDebuffTickTime(spellRecord, unitID)
 
   local nextTick = spellAura.expirationTime
 
-  for tickNumber = 1, spellRecord.ticks do
-    local tickTime = spellAura.startTime + (spellAura.tickFrequency * tickNumber)
+  local ticks = spellAura.ticks
+
+  if not ticks or ticks < 1 then
+    return 0
+  end
+
+  for tickNumber = 1, ticks do
+    local tickTime = spellAura.tickTimes[tickNumber]
+        or spellAura.startTime + (spellAura.tickFrequency * tickNumber)
 
     if tickTime > now then
       nextTick = tickTime
@@ -96,7 +109,7 @@ function Context:GetTarget(guid)
   local target = self.targets[guid] or {
     spellAuras = {},
     pendingSpellMods = {},
-    comboPoints = 0,
+    finisherComboPoints = {},
   }
   self.targets[guid] = target
 
@@ -105,19 +118,6 @@ end
 
 function Context:RemoveTarget(guid)
   self.targets[guid] = nil
-end
-
-function Context:SetComboPoints(unitID, comboPoints)
-  local guid = UnitGUID(unitID)
-  local target = self:GetTarget(guid)
-
-  target.comboPoints = comboPoints
-end
-
-function Context:ResetComboPoints()
-  for guid, target in pairs(self.targets) do
-    target.comboPoints = 0
-  end
 end
 
 function Context:AddPendingSpellMod(target, spellMod)
@@ -161,6 +161,240 @@ function Context:HandlePendingSpellMods(target, spellMods)
   end
 end
 
+function Context:GetTargetUnitIDs()
+  local unitIDs = {
+    "mouseover", "target", "focus", "mouseovertarget", "targettarget",
+    "focustarget", "mouseovertargettarget", "targettargettarget",
+    "focustargettarget",
+  }
+
+  for groupUnitID in WA_IterateGroupMembers() do
+    table.insert(unitIDs, groupUnitID .. "target")
+    table.insert(unitIDs, groupUnitID .. "targettarget")
+    table.insert(unitIDs, groupUnitID .. "targettargettarget")
+  end
+
+  return unitIDs
+end
+
+function Context:HandleSpellCastEvents(
+    subEvent,
+    sourceGUID,
+    sourceName,
+    sourceFlags,
+    destGUID,
+    destName,
+    destFlags,
+    spellID,
+    spellName,
+    spellSchool,
+    amount
+)
+  if subEvent ~= "SPELL_CAST_SUCCESS" then
+    return
+  end
+
+  local spellRecord = self:GetSpellRecord(nil, nil, spellID)
+
+  if not spellRecord or spellRecord.type ~= self.spellTypes.finisherDebuff then
+    return
+  end
+
+  local target = Context:GetTarget(destGUID)
+
+  local unitIDs = Context:GetTargetUnitIDs()
+
+  for _, unitID in ipairs(unitIDs) do
+    if UnitGUID(unitID) == destGUID then
+      target.finisherComboPoints[spellRecord.spellID] = GetComboPoints("player", unitID)
+
+      return
+    end
+  end
+end
+
+function Context:HandleSpellAuraEvents(
+    subEvent,
+    sourceGUID,
+    sourceName,
+    sourceFlags,
+    destGUID,
+    destName,
+    destFlags,
+    spellID,
+    spellName,
+    spellSchool,
+    amount
+)
+  local spellRecord = self:GetSpellRecord(nil, nil, spellID)
+  local target = self:GetTarget(destGUID)
+
+  local shouldExecute =
+      spellRecord
+      and target
+      and (
+        subEvent == "SPELL_AURA_APPLIED"
+        or subEvent == "SPELL_AURA_REFRESH"
+        or subEvent == "SPELL_AURA_REMOVED"
+      )
+
+  if not shouldExecute then
+    return
+  end
+
+  if subEvent == "SPELL_AURA_REMOVED" then
+    target.spellAuras[spellID] = nil
+
+    return
+  end
+
+  local destUnitID = nil
+  local unitIDs = Context:GetTargetUnitIDs()
+
+  for _, unitID in ipairs(unitIDs) do
+    if UnitGUID(unitID) == destGUID then
+      destUnitID = unitID
+
+      break
+    end
+  end
+
+  if not destUnitID then
+    return
+  end
+
+  local spellName,
+  rankText,
+  icon,
+  count,
+  dispelType,
+  duration,
+  expirationTime,
+  source = WA_GetUnitDebuff(destUnitID, spellID)
+
+  local ticks = spellRecord.ticks
+
+  if spellRecord.type == Context.spellTypes.finisherDebuff then
+    ticks = spellRecord.ticks[target.finisherComboPoints[spellRecord.spellID] or 0]
+    target.finisherComboPoints[spellRecord.spellID] = 0
+  end
+
+  if not ticks or ticks < 1 or not duration or duration == 0 then
+    return
+  end
+
+  local spellMods = target.pendingSpellMods[spellID]
+
+  duration = duration * 1000
+  expirationTime = expirationTime * 1000
+  local startTime = expirationTime - duration
+  local tickFrequency = math.floor((duration / ticks) * 10000) / 10000
+
+  if subEvent == "SPELL_AURA_APPLIED" or not spellMods or #spellMods < 1 then
+    local tickTimes = {}
+
+    for i = 1, ticks do
+      table.insert(tickTimes, startTime + (i * tickFrequency))
+    end
+
+    target.spellAuras[spellID] = {
+      duration = duration,
+      expirationTime = expirationTime,
+      ticks = ticks,
+      tickFrequency = tickFrequency,
+      tickTimes = tickTimes,
+      modifications = {}
+    }
+
+    return
+  end
+
+  for _, spellMod in pairs(spellMods) do
+    if spellMod.type == self.modTypes.auraFull then
+      local firstTickTime = self:GetNextDebuffTickTime(spellRecord, destUnitID)
+      local tickTimes = { firstTickTime }
+
+      for i = 1, ticks - 1 do
+        table.insert(tickTimes, firstTickTime + (i * tickFrequency))
+      end
+
+      target.spellAuras[spellID] = {
+        duration = duration,
+        expirationTime = expirationTime,
+        startTime = startTime,
+        ticks = ticks,
+        tickFrequency = tickFrequency,
+        tickTimes = tickTimes,
+        modifications = {}
+      }
+    elseif spellMod.type == self.modTypes.aura then
+      local spellAura = target.spellAuras[spellID]
+
+      if not spellMod.limit or not spellAura.modifications[spellMod] or spellAura.modifications[spellMod] < spellMod.limit then
+        local modifiedTicks = spellAura.ticks + spellMod.ticks
+        local modifiedTickFrequency = math.floor((duration / modifiedTicks) * 1000) / 1000
+        local tickTimes = {}
+
+        for i = 1, modifiedTicks do
+          table.insert(tickTimes, startTime + (i * tickFrequency))
+        end
+
+        spellAura.duration = duration
+        spellAura.expirationTime = expirationTime
+        spellAura.startTime = startTime
+        spellAura.ticks = modifiedTicks
+        spellAura.tickFrequency = modifiedTickFrequency
+        spellAura.tickTimes = tickTimes
+        spellAura.modifications[spellMod] = (spellAura.modifications[spellMod] or 0) + spellMod.ticks
+      end
+    end
+  end
+end
+
+function Context:HandleModEventTriggers(
+    event,
+    subEvent,
+    sourceGUID,
+    sourceName,
+    sourceFlags,
+    destGUID,
+    destName,
+    destFlags,
+    spellID,
+    spellName,
+    spellSchool,
+    amount
+)
+  local target = self:GetTarget(destGUID)
+  local triggers = self.spellModifications.active.triggers or {}
+  local cleuTriggers = triggers[event] or {}
+  local spellMods = cleuTriggers[subEvent or ""] or {}
+
+  if not spellMods or #spellMods < 1 then
+    return
+  end
+
+  local filteredSpellMods = {}
+
+  for _, spellMod in pairs(spellMods) do
+    local isMatch = true
+
+    if spellMod.trigger.spellIDs then
+      isMatch = spellMod.trigger.spellIDs[spellID]
+    end
+
+    if isMatch and subEvent == "SPELL_MISSED" and spellMod.trigger.missType then
+      isMatch = spellMod.trigger.missType == amount
+    end
+
+    if isMatch then
+      table.insert(filteredSpellMods, spellMod)
+    end
+  end
+
+  self:HandlePendingSpellMods(target, filteredSpellMods)
+end
+
 local eventListeners = Context.eventListeners or {}
 Context.eventListeners = eventListeners
 
@@ -195,41 +429,6 @@ eventListeners.UNIT_SPELLCAST_CHANNEL_STOP = function()
   Context:ResetChannelingSpellDetails()
 end
 
-function Context:GetTargetUnitIDs()
-  local unitIDs = {
-    "mouseover", "target", "focus", "mouseovertarget", "targettarget",
-    "focustarget", "mouseovertargettarget", "targettargettarget",
-    "focustargettarget",
-  }
-
-  for groupUnitID in WA_IterateGroupMembers() do
-    table.insert(unitIDs, groupUnitID .. "target")
-    table.insert(unitIDs, groupUnitID .. "targettarget")
-    table.insert(unitIDs, groupUnitID .. "targettargettarget")
-  end
-
-  return unitIDs
-end
-
-eventListeners.UNIT_COMBO_POINTS = function(eventUnitID)
-  if eventUnitID ~= "player" then
-    return
-  end
-
-  Context:ResetComboPoints()
-  local unitIDs = Context:GetTargetUnitIDs()
-
-  for _, unitID in ipairs(unitIDs) do
-    local comboPoints = GetComboPoints("player", unitID) or 0
-
-    if comboPoints > 0 then
-      Context:SetComboPoints(unitID, comboPoints)
-
-      return
-    end
-  end
-end
-
 eventListeners.COMBAT_LOG_EVENT_UNFILTERED = function(
     timeStamp,
     subEvent,
@@ -254,81 +453,46 @@ eventListeners.COMBAT_LOG_EVENT_UNFILTERED = function(
     return
   end
 
-  local target = Context:GetTarget(destGUID)
-  local spellRecord = Context:GetSpellRecord(nil, nil, spellID)
+  Context:HandleSpellCastEvents(
+    subEvent,
+    sourceGUID,
+    sourceName,
+    sourceFlags,
+    destGUID,
+    destName,
+    destFlags,
+    spellID,
+    spellName,
+    spellSchool,
+    amount
+  )
 
-  if (subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_AURA_REFRESH") and spellRecord then
-    local destUnitID = nil
-    local unitIDs = Context:GetTargetUnitIDs()
+  Context:HandleSpellAuraEvents(
+    subEvent,
+    sourceGUID,
+    sourceName,
+    sourceFlags,
+    destGUID,
+    destName,
+    destFlags,
+    spellID,
+    spellName,
+    spellSchool,
+    amount
+  )
 
-    for _, unitID in ipairs(unitIDs) do
-      if UnitGUID(unitID) == destGUID then
-        destUnitID = unitID
-
-        break
-      end
-    end
-
-    if destUnitID then
-      local spellName,
-      rankText,
-      icon,
-      count,
-      dispelType,
-      duration,
-      expirationTime,
-      source = WA_GetUnitDebuff(destUnitID, spellID)
-
-      local ticks = spellRecord.ticks
-
-      if spellRecord.type == Context.spellTypes.finisherDebuff then
-        ticks = spellRecord.ticks[target.comboPoints]
-      end
-
-      if ticks and duration then
-        duration = duration * 1000
-        expirationTime = expirationTime * 1000
-
-        target.spellAuras[spellID] = {
-          duration = duration,
-          expirationTime = expirationTime,
-          startTime = expirationTime - duration,
-          ticks = ticks,
-          tickFrequency = duration / ticks,
-        }
-      end
-    end
-  end
-
-  if subEvent == "SPELL_AURA_REMOVED" and spellRecord then
-    target.spellAuras[spellID] = nil
-  end
-
-  local triggers = Context.spellModifications.active.triggers or {}
-  local cleuTriggers = triggers["COMBAT_LOG_EVENT_UNFILTERED"] or {}
-  local spellMods = cleuTriggers[subEvent] or {}
-
-  if #spellMods < 1 then
-    return
-  end
-
-  local filteredSpellMods = spellMods
-
-  for _, spellMod in pairs(spellMods) do
-    local isMatch = true
-
-    if spellMod.trigger.spellIDs then
-      isMatch = spellMod.trigger.spellIDs[spellID]
-    end
-
-    if isMatch and subEvent == "SPELL_MISSED" and spellMod.trigger.missType then
-      isMatch = spellMod.trigger.missType == amount
-    end
-
-    if isMatch then
-      table.insert(filteredSpellMods, spellMod)
-    end
-  end
-
-  Context:HandlePendingSpellMods(target, filteredSpellMods)
+  Context:HandleModEventTriggers(
+    "COMBAT_LOG_EVENT_UNFILTERED",
+    subEvent or "",
+    sourceGUID,
+    sourceName,
+    sourceFlags,
+    destGUID,
+    destName,
+    destFlags,
+    spellID,
+    spellName,
+    spellSchool,
+    amount
+  )
 end
