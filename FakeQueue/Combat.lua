@@ -79,7 +79,7 @@ function Context:GetNextDebuffTickTime(spellRecord, unitID)
     return 0
   end
 
-  local _, _, _, _, _, _, castTime, minRange, maxRange = GetSpellInfo(spellRecord.spellID)
+  local _, _, _, _, _, _, castTime, minSpellRange, maxSpellRange = GetSpellInfo(spellRecord.spellID)
   castTime = castTime or 0
 
   local nextTick = spellAura.expirationTime
@@ -92,8 +92,8 @@ function Context:GetNextDebuffTickTime(spellRecord, unitID)
 
   local travelTime = 0
 
-  if castTime < 0 and minRange and maxRange then
-    travelTime = (math.abs(travelTime) / 1000) / maxRange
+  if castTime < 0 and minSpellRange and maxSpellRange then
+    travelTime = (math.abs(travelTime) / 1000) / maxSpellRange
     castTime = 0
   end
 
