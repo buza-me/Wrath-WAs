@@ -53,6 +53,7 @@ function Context:InitSpells()
           rankText = localizedRank,
           ticks = ticks,
           defaultTicks = totalTicks,
+          oneYardTravelTime = spellTemplate.oneYardTravelTime
         }
 
         spellsByName[localizedName].ranks[localizedRank] = spellRecord
@@ -501,12 +502,14 @@ Context.spellTemplates = {
     },
     ["Viper Sting"] = {
       type = spellTypes.debuff,
+      oneYardTravelTime = 24.6576,
       ranks = {
         [3034] = 4,
       },
     },
     ["Serpent Sting"] = {
       type = spellTypes.debuff,
+      oneYardTravelTime = 24.6576,
       ranks = {
         [1978] = 5,
         [13549] = 5,
