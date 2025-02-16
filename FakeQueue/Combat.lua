@@ -2,8 +2,10 @@ local LIB_NAME = "SoltiFakeQueueContext"
 LibStub:NewLibrary(LIB_NAME, 1)
 local Context = LibStub(LIB_NAME)
 local GetTime = GetTimePreciseSec or GetTime
+local gameVersionMajorMinor = string.sub(GetBuildInfo(), 1, 3)
 
 Context.Timer = LibStub("AceTimer-3.0")
+Context.isOldClient = gameVersionMajorMinor == "2.4" or gameVersionMajorMinor == "3.3"
 
 local myName = UnitName("player")
 local targets = Context.targets or {}
@@ -446,20 +448,21 @@ eventListeners.UNIT_SPELLCAST_CHANNEL_STOP = function()
   Context:ResetChannelingSpellDetails()
 end
 
-eventListeners.COMBAT_LOG_EVENT_UNFILTERED = function(
-    timeStamp,
-    subEvent,
-    sourceGUID,
-    sourceName,
-    sourceFlags,
-    destGUID,
-    destName,
-    destFlags,
-    spellID,
-    spellName,
-    spellSchool,
-    amount
-)
+eventListeners.COMBAT_LOG_EVENT_UNFILTERED = function(...)
+  local timeStamp, subEvent, hideCaster, sourceGUID,
+  sourceName, sourceFlags, sourceRaidFlags, destGUID, destName,
+  destFlags, destRaidFlags, spellID, spellName, spellSchool, amount
+
+  if Context.isOldClient then
+    timeStamp, subEvent, sourceGUID,
+    sourceName, sourceFlags, destGUID, destName,
+    destFlags, spellID, spellName, spellSchool, amount = unpack({ ... })
+  else
+    timeStamp, subEvent, hideCaster, sourceGUID,
+    sourceName, sourceFlags, sourceRaidFlags, destGUID, destName,
+    destFlags, destRaidFlags, spellID, spellName, spellSchool, amount = unpack({ ... })
+  end
+
   if subEvent == "UNIT_DIED" then
     Context:RemoveTarget(destGUID)
 

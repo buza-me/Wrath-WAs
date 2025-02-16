@@ -37,7 +37,7 @@ function Init()
     [36597] = true, -- Lich King
   }
 
-  function Context:GetConfig()
+  function Context:GetInternalConfig()
     return WeakAurasSaved["displays"][env.id]["config"]
   end
 
@@ -85,9 +85,9 @@ function Init()
   end
 
   function Context:FakeQueue(macroSpellIdentifier, unitID)
-    local config = self:GetConfig()
+    local internalConfig = self:GetInternalConfig()
 
-    if not config.fqEnabled then
+    if not internalConfig.fqEnabled then
       return
     end
 
@@ -170,7 +170,7 @@ function Init()
         -- nothing
       end
     else
-      local loopLength = (waitFor / 1000) * config.oneSecondLoopLength
+      local loopLength = (waitFor / 1000) * internalConfig.oneSecondLoopLength
       for i = 1, loopLength do
         -- nothing
       end
@@ -189,9 +189,9 @@ function Init()
         local loopTestStartTime = GetTime()
         local frameTime = loopTestStartTime - frameTestStartTime
 
-        local config = Context:GetConfig()
+        local internalConfig = Context:GetInternalConfig()
 
-        for i = 1, config.calibrationLoopLength do
+        for i = 1, internalConfig.calibrationLoopLength do
           -- nothing
         end
 
@@ -199,8 +199,10 @@ function Init()
           local loopTime = GetTime() - loopTestStartTime - frameTime
           local oneSecondRatio = 1 / loopTime
 
-          config.oneSecondLoopLength = config.calibrationLoopLength * oneSecondRatio
-          config.calibrationLoopLength = config.oneSecondLoopLength * config.calibrationLoopDuration
+          internalConfig.oneSecondLoopLength =
+              internalConfig.calibrationLoopLength * oneSecondRatio
+          internalConfig.calibrationLoopLength =
+              internalConfig.oneSecondLoopLength * internalConfig.calibrationLoopDuration
         end, 0)
       end, 0)
     end, 0)
@@ -238,20 +240,20 @@ function Init()
     Context:ReportMaxWait()
     Context.log("Player is in combat.")
 
-    local config = Context:GetConfig()
+    local internalConfig = Context:GetInternalConfig()
 
-    return config.shouldShowIconOnCombatStart
+    return internalConfig.shouldShowIconOnCombatStart
   end
 
   eventListeners.SOLTI_FAKE_QUEUE_TOGGLE = function()
-    local config = Context:GetConfig()
+    local internalConfig = Context:GetInternalConfig()
 
-    if config.fqEnabled then
-      config.fqEnabled = false
+    if internalConfig.fqEnabled then
+      internalConfig.fqEnabled = false
       Context:ReportMaxWait(0)
       Context.log("Fake Queue disabled.")
     else
-      config.fqEnabled = true
+      internalConfig.fqEnabled = true
       Context:ReportMaxWait()
       Context.log("Fake Queue enabled.")
     end
