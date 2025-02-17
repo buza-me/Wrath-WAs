@@ -1,4 +1,4 @@
-local LIB_NAME = "SoltiFakeQueueContext"
+local LIB_NAME = "SoltiSpellQueueContext"
 LibStub:NewLibrary(LIB_NAME, 1)
 local Context = LibStub(LIB_NAME)
 

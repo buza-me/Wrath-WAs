@@ -1,4 +1,4 @@
-local LIB_NAME = "SoltiFakeQueueContext"
+local LIB_NAME = "SoltiSpellQueueContext"
 LibStub:NewLibrary(LIB_NAME, 1)
 local Context = LibStub(LIB_NAME)
 local GetTime = GetTimePreciseSec or GetTime
@@ -382,7 +382,7 @@ function Context:HandleModEventTriggers(
     spellID,
     spellName,
     spellSchool,
-    amount
+    missType
 )
   local target = self:GetTarget(destGUID)
   local triggers = self.spellModifications.active.triggers or {}
@@ -403,7 +403,7 @@ function Context:HandleModEventTriggers(
     end
 
     if isMatch and subEvent == "SPELL_MISSED" and spellMod.trigger.missType then
-      isMatch = spellMod.trigger.missType == amount
+      isMatch = spellMod.trigger.missType == missType
     end
 
     if isMatch then

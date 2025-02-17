@@ -1,0 +1,49 @@
+Copy this text into a text editor for ease of reading.
+
+Delays your casts by temporarily freezing your game to prevent early channeled spell and DOT clips.
+Configurable in Custom Options.
+Requires calibration for your computer, if you are using an old WOTLK and/or TBC client, not a recent classic client.
+Negative world ping offset is more cast delay.
+Positive world ping offset is less cast delay.
+Absolute Offset does nothing unless Use World Ping Offset is disabled.
+For example 40ms world ping and -10 offset is same as an Absolute Offset of 30.
+
+Only test your settings while inside an instance, because the game ticks much slower when outside of an instance.
+
+Use /run SQToggle() to toggle fake spell queue enabled on and off.
+Use /run SQCalibrate() to calibrate the freeze duration for your computer.
+Calibrate every time you enter a raid and when your processor speed changes, like a battery saver mode or overclock.
+
+To use spell queue include on top of your spell macro, below #showtooltip:
+/run SQ(spell, unitID), where unitID is optional.
+Unit id can be anything like "target" or "focus" or "pettarget" etc.
+
+Mind Flay example with spell name (auto max rank):
+#showtooltip
+/run SQ("Mind Flay")
+/cast Mind Flay
+
+Mind Flay example with spell name and specific rank:
+#showtooltip
+/run SQ("Mind Flay(Rank 9)")
+/cast Mind Flay(Rank 9)
+
+Mind Flay example with spell ID:
+#showtooltip
+/run SQ(48156)
+/cast Mind Flay(Rank 9)
+
+Devouring Plague example with spell name and focus as a tracked unit:
+#showtooltip
+/run SQ("Devouring Plague", "focus")
+/cast [target=focus] Devouring Plague
+
+Reports fake spell queue delay amounts (in milliseconds) via WeakAuras.ScanEvents("WA_FAKE_QUEUE_DELAY", delay)
+Reports fake spell queue max delay (ms) setting via WeakAuras.ScanEvents("WA_FAKE_QUEUE_MAX_WAIT", val)
+
+Made by Solti, Whitemane-Frostmourne.
+
+Based on WA by Heaviside:
+https://wago.io/7AVcaIwn7
+Which is based on WA by Ducks:
+https://wago.io/Atm6dVYpK

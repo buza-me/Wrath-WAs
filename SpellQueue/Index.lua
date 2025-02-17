@@ -1,5 +1,5 @@
 function Init()
-  local LIB_NAME = "SoltiFakeQueueContext"
+  local LIB_NAME = "SoltiSpellQueueContext"
   LibStub:NewLibrary(LIB_NAME, 1)
   local Context = LibStub(LIB_NAME)
   local GetTime = GetTimePreciseSec or GetTime
@@ -26,7 +26,7 @@ function Init()
 
   function Context.log(...)
     if env.config.debug then
-      print("FQ - ", ...)
+      print("SQ - ", ...)
     end
   end
 
@@ -46,7 +46,7 @@ function Init()
         or (not not self.unsafeEncounters[self.encounterID])
   end
 
-  function Context:ReportFQDelay(delay)
+  function Context:ReportSQDelay(delay)
     WeakAuras.ScanEvents("WA_FAKE_QUEUE_DELAY", delay)
   end
 
@@ -84,22 +84,22 @@ function Init()
     return offset
   end
 
-  function Context:FakeQueue(macroSpellIdentifier, unitID)
+  function Context:SpellQueue(macroSpellIdentifier, unitID)
     local internalConfig = self:GetInternalConfig()
 
-    if not internalConfig.fqEnabled then
+    if not internalConfig.isEnabled then
       return
     end
 
     if not macroSpellIdentifier then
-      print(string.format("Spell name is required for a Fake Queue macro."))
+      print(string.format("Spell name is required for a Spell Queue macro."))
       return
     end
 
     local spellName, rankText = GetSpellInfo(macroSpellIdentifier)
 
     if not spellName then
-      print(string.format("Wrong Fake Queue macro spell name: %s", macroSpellIdentifier))
+      print(string.format("Wrong Spell Queue macro spell name: %s", macroSpellIdentifier))
       return
     end
 
@@ -161,7 +161,7 @@ function Init()
       end
     end
 
-    self:ReportFQDelay(waitFor)
+    self:ReportSQDelay(waitFor)
 
     if isTimePrecise then
       local start = GetTime()
@@ -179,7 +179,7 @@ function Init()
     self.log(string.format("Waited for %s MS.", waitFor))
   end
 
-  function Context:FakeQueueCalibrate()
+  function Context:SpellQueueCalibrate()
     local Timer = self.Timer
 
     Timer:ScheduleTimer(function()
@@ -208,8 +208,8 @@ function Init()
     end, 0)
   end
 
-  function Context:ToggleFQEnabled()
-    WeakAuras.ScanEvents("SOLTI_FAKE_QUEUE_TOGGLE")
+  function Context:ToggleSQEnabled()
+    WeakAuras.ScanEvents("SOLTI_SPELL_QUEUE_TOGGLE")
   end
 
   local function onInit()
@@ -245,17 +245,17 @@ function Init()
     return internalConfig.shouldShowIconOnCombatStart
   end
 
-  eventListeners.SOLTI_FAKE_QUEUE_TOGGLE = function()
+  eventListeners.SOLTI_SPELL_QUEUE_TOGGLE = function()
     local internalConfig = Context:GetInternalConfig()
 
-    if internalConfig.fqEnabled then
-      internalConfig.fqEnabled = false
+    if internalConfig.isEnabled then
+      internalConfig.isEnabled = false
       Context:ReportMaxWait(0)
-      Context.log("Fake Queue disabled.")
+      Context.log("Spell Queue disabled.")
     else
-      internalConfig.fqEnabled = true
+      internalConfig.isEnabled = true
       Context:ReportMaxWait()
-      Context.log("Fake Queue enabled.")
+      Context.log("Spell Queue enabled.")
     end
 
     return true
@@ -263,37 +263,39 @@ function Init()
 
   eventListeners.WA_DELAYED_PLAYER_ENTERING_WORLD = onInit
 
-  eventListeners.SOLTI_FAKE_QUEUE_DEBUG_EVENT = function(event)
+  eventListeners.SOLTI_SPELL_QUEUE_DEBUG_EVENT = function(event)
     Context.log(string.format("Unhandled event in trigger 1: %s", event))
   end
 
+  setglobal("SQ", function(...)
+    return Context:SpellQueue(...)
+  end)
+
+  setglobal("SQToggle", function()
+    return Context:ToggleSQEnabled()
+  end)
+
+  setglobal("SQCalibrate", function()
+    return Context:SpellQueueCalibrate()
+  end)
+
+  ------------------------- For internal use ---------------------------
   setglobal("FQGetMaxWait", function()
     return Context:GetMaxWait()
   end)
 
-  setglobal("FQ", function(...)
-    return Context:FakeQueue(...)
-  end)
-
-  setglobal("FQToggle", function()
-    return Context:ToggleFQEnabled()
-  end)
-
-  setglobal("FQCalibrate", function()
-    return Context:FakeQueueCalibrate()
-  end)
-
-  setglobal("FQDumpState", function()
+  setglobal("SQDumpActiveSpellMods", function()
     print("Active spell mods:")
     for _, spellMod in pairs(Context.spellModifications.active.list) do
       print(spellMod.name)
     end
   end)
+  ----------------------------------------------------------------------
 
   onInit()
 end
 
--- UNIT_SPELLCAST_CHANNEL_START:player,UNIT_SPELLCAST_CHANNEL_UPDATE:player,UNIT_SPELLCAST_CHANNEL_STOP:player,UNIT_INVENTORY_CHANGED,PLAYER_EQUIPMENT_CHANGED,PLAYER_REGEN_DISABLED,ENCOUNTER_START,ENCOUNTER_END,WA_DELAYED_PLAYER_ENTERING_WORLD,SOLTI_FAKE_QUEUE_TOGGLE,GLYPH_ADDED,GLYPH_DISABLED,GLYPH_ENABLED,GLYPH_REMOVED,GLYPH_UPDATED,PLAYER_TALENT_UPDATE,ACTIVE_TALENT_GROUP_CHANGED,CHARACTER_POINTS_CHANGED,CONFIRM_TALENT_WIPE,CLEU
+-- UNIT_SPELLCAST_CHANNEL_START:player,UNIT_SPELLCAST_CHANNEL_UPDATE:player,UNIT_SPELLCAST_CHANNEL_STOP:player,UNIT_INVENTORY_CHANGED,PLAYER_EQUIPMENT_CHANGED,PLAYER_REGEN_DISABLED,ENCOUNTER_START,ENCOUNTER_END,WA_DELAYED_PLAYER_ENTERING_WORLD,SOLTI_SPELL_QUEUE_TOGGLE,GLYPH_ADDED,GLYPH_DISABLED,GLYPH_ENABLED,GLYPH_REMOVED,GLYPH_UPDATED,PLAYER_TALENT_UPDATE,ACTIVE_TALENT_GROUP_CHANGED,CHARACTER_POINTS_CHANGED,CONFIRM_TALENT_WIPE,CLEU:SPELL_CAST_SUCCESS:SPELL_AURA_APPLIED:SPELL_AURA_REFRESH:SPELL_AURA_REMOVED:SPELL_DAMAGE:SPELL_MISSED:UNIT_DIED
 function Trigger1(event, ...)
   local eventListeners = aura_env.Context.eventListeners
 
@@ -304,7 +306,7 @@ function Trigger1(event, ...)
   local eventListener = eventListeners[event]
 
   if not eventListener then
-    return eventListeners.SOLTI_FAKE_QUEUE_DEBUG_EVENT(event)
+    return eventListeners.SOLTI_SPELL_QUEUE_DEBUG_EVENT(event)
   end
 
   return eventListener(...) or false

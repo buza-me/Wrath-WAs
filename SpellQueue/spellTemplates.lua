@@ -1,4 +1,4 @@
-local LIB_NAME = "SoltiFakeQueueContext"
+local LIB_NAME = "SoltiSpellQueueContext"
 LibStub:NewLibrary(LIB_NAME, 1)
 local Context = LibStub(LIB_NAME)
 
@@ -76,7 +76,7 @@ function Context:GetSpellRecord(spellName, rankText, spellID)
   if not spellRecord and self.log then
     self.log(
       string.format(
-        "FQ - Unknown spell. Name: %s. Rank: %s. Spell ID: %s.",
+        "SQ - Unknown spell. Name: %s. Rank: %s. Spell ID: %s.",
         spellName or "",
         rankText or "",
         spellID or ""
