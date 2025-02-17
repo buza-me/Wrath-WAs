@@ -47,7 +47,7 @@ function Init()
   end
 
   function Context:ReportSQDelay(delay)
-    WeakAuras.ScanEvents("WA_FAKE_QUEUE_DELAY", delay)
+    WeakAuras.ScanEvents("SOLTI_SPELL_QUEUE_DELAY", delay)
   end
 
   function Context:GetMaxWait()
@@ -69,7 +69,7 @@ function Init()
       reportedValue = self:GetMaxWait()
     end
 
-    WeakAuras.ScanEvents("WA_FAKE_QUEUE_MAX_WAIT", reportedValue)
+    WeakAuras.ScanEvents("SOLTI_SPELL_QUEUE_MAX_WAIT", reportedValue)
   end
 
   function Context:GetWaitTimeOffset()
@@ -280,7 +280,7 @@ function Init()
   end)
 
   ------------------------- For internal use ---------------------------
-  setglobal("FQGetMaxWait", function()
+  setglobal("SQGetMaxWait", function()
     return Context:GetMaxWait()
   end)
 
