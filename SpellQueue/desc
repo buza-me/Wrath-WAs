@@ -47,3 +47,48 @@ Based on WA by Heaviside:
 https://wago.io/7AVcaIwn7
 Which is based on WA by Ducks:
 https://wago.io/Atm6dVYpK
+
+Supported spells:
+PRIEST:
+
+- Mind Flay
+- Mind Sear
+- Vampiric Touch
+- Devouring Plague
+- Shadow Word: Pain
+- Holy Fire
+- Hymn of Hope
+- Divine Hymn
+- Penance
+  WARLOCK:
+- Drain Soul
+- Drain Life
+- Drain Mana
+- Health Funnel
+- Hellfire
+- Immolate
+- Rain of Fire
+- Corruption
+- Curse of Agony
+- Unstable Affliction
+  DRUID:
+- Hurricane
+- Tranquility
+- Moonfire
+- Insect Swarm
+- Rake
+- Rip
+  MAGE:
+- Evocation
+- Blizzard
+- Arcane Missiles
+- Living Bomb
+  SHAMAN:
+- Flame Shock
+  ROGUE:
+- Garrote
+- Rupture
+  HUNTER:
+- Volley
+- Viper Sting
+- Serpent Sting
