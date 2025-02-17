@@ -332,9 +332,15 @@ function Context:HandleSpellAuraEvents(
     if spellMod.type == self.modTypes.auraFull then
       local firstTickTime = self:GetNextDebuffTickTime(spellRecord, destUnitID)
       local tickTimes = { firstTickTime }
+      local modifiedTickFrequency = tickFrequency
+
+      if Context.mainEnv and Context.mainEnv.config.isAuraRefreshFixed then
+        local firstTickDuration = firstTickTime - startTime
+        modifiedTickFrequency = (duration - firstTickDuration) / (ticks - 1)
+      end
 
       for i = 1, ticks - 1 do
-        table.insert(tickTimes, firstTickTime + (i * tickFrequency))
+        table.insert(tickTimes, firstTickTime + (i * modifiedTickFrequency))
       end
 
       target.spellAuras[spellID] = {
@@ -342,7 +348,7 @@ function Context:HandleSpellAuraEvents(
         expirationTime = expirationTime,
         startTime = startTime,
         ticks = ticks,
-        tickFrequency = tickFrequency,
+        tickFrequency = modifiedTickFrequency,
         tickTimes = tickTimes,
         modifications = {}
       }

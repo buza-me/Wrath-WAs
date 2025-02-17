@@ -8,6 +8,7 @@ function Init()
 
   env.Context = Context
   Context.Timer = LibStub("AceTimer-3.0")
+  Context.mainEnv = env
 
   if not Context.callbacks then
     -- DBM mod.creatureId; LichKing = 36597; Lanathel = 37955
