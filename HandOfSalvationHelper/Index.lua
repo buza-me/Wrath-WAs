@@ -30,14 +30,18 @@ function Init()
     return a.threatPercent > b.threatPercent
   end
 
+  -- UNIT_THREAT_LIST_UPDATE:target:focus,PLAYER_TARGET_CHANGED,PLAYER_FOCUS_CHANGED,PLAYER_REGEN_ENABLED
   function aura_env:Trigger1(allstates, event, ...)
     for _, state in pairs(allstates) do
       state.show = false;
       state.changed = true;
     end
 
+    local cdStart, cdDuration = GetSpellCooldown(1038)
+
     local shouldAbort =
-        event == "PLAYER_TARGET_CHANGED"
+        (cdDuration and cdDuration > 0)
+        or event == "PLAYER_TARGET_CHANGED"
         or event == "PLAYER_FOCUS_CHANGED"
         or event == "PLAYER_REGEN_ENABLED"
         or (not UnitExists("target") and not UnitExists("focus"))
