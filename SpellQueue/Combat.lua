@@ -232,6 +232,10 @@ function Context:HandleSpellCastEvents(
   end
 end
 
+local function shortFloat(number)
+  return math.floor(number * 10000) / 10000
+end
+
 function Context:HandleSpellAuraEvents(
     subEvent,
     sourceGUID,
@@ -307,7 +311,7 @@ function Context:HandleSpellAuraEvents(
   duration = duration * 1000
   expirationTime = expirationTime * 1000
   local startTime = expirationTime - duration
-  local tickFrequency = math.floor((duration / ticks) * 10000) / 10000
+  local tickFrequency = shortFloat(duration / ticks)
 
   if subEvent == "SPELL_AURA_APPLIED" or not spellMods or #spellMods < 1 then
     local tickTimes = {}
@@ -336,7 +340,7 @@ function Context:HandleSpellAuraEvents(
 
       if Context.mainEnv and Context.mainEnv.config.isAuraRefreshFixed then
         local firstTickDuration = firstTickTime - startTime
-        modifiedTickFrequency = (duration - firstTickDuration) / (ticks - 1)
+        modifiedTickFrequency = shortFloat((duration - firstTickDuration) / (ticks - 1))
       end
 
       for i = 1, ticks - 1 do
@@ -357,7 +361,7 @@ function Context:HandleSpellAuraEvents(
 
       if not spellMod.limit or not spellAura.modifications[spellMod] or spellAura.modifications[spellMod] < spellMod.limit then
         local modifiedTicks = spellAura.ticks + spellMod.ticks
-        local modifiedTickFrequency = math.floor((duration / modifiedTicks) * 1000) / 1000
+        local modifiedTickFrequency = shortFloat(duration / modifiedTicks)
         local tickTimes = {}
 
         for i = 1, modifiedTicks do
