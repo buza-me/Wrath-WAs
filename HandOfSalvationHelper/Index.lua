@@ -37,11 +37,8 @@ function Init()
       state.changed = true;
     end
 
-    local cdStart, cdDuration = GetSpellCooldown(1038)
-
     local shouldAbort =
-        (cdDuration and cdDuration > 0)
-        or event == "PLAYER_TARGET_CHANGED"
+        event == "PLAYER_TARGET_CHANGED"
         or event == "PLAYER_FOCUS_CHANGED"
         or event == "PLAYER_REGEN_ENABLED"
         or (not UnitExists("target") and not UnitExists("focus"))
@@ -52,7 +49,7 @@ function Init()
 
     local _, trackedCoolDownDuration = GetSpellCooldown(trackedSpellID)
 
-    if trackedCoolDownDuration > 0 then
+    if trackedCoolDownDuration and trackedCoolDownDuration > 0 then
       return allstates
     end
 
