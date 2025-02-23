@@ -3,6 +3,8 @@ LibStub:NewLibrary(LIB_NAME, 1)
 local Context = LibStub(LIB_NAME)
 
 local myClass = select(2, UnitClass("player"))
+local gameVersionMajor = string.sub(GetBuildInfo(), 1, 1)
+local isTBC = gameVersionMajor == "2"
 
 local modTypes = {
   spell = "spell",
@@ -18,6 +20,9 @@ Context.itemSetSlots = {
   (GetInventorySlotInfo("ShoulderSlot")),
   (GetInventorySlotInfo("LegsSlot")),
   (GetInventorySlotInfo("HandsSlot")),
+  (GetInventorySlotInfo("WristSlot")),
+  (GetInventorySlotInfo("WaistSlot")),
+  (GetInventorySlotInfo("FeetSlot")),
 }
 
 function Context:InitSpellMods()
@@ -61,7 +66,8 @@ function Context:UpdateItemSetSpellMods()
 
       if spellModList then
         for _, spellModID in pairs(spellModList) do
-          table.insert(spellMods, self.spellModifications.list[spellModID])
+          local spellMod = self.spellModifications.list[spellModID]
+          spellMods[spellMod] = spellMod
         end
       end
     end
@@ -85,7 +91,8 @@ function Context:UpdateGlyphSpellMods()
 
     if spellModList then
       for _, spellModID in pairs(spellModList) do
-        table.insert(spellMods, self.spellModifications.list[spellModID])
+        local spellMod = self.spellModifications.list[spellModID]
+        spellMods[spellMod] = spellMod
       end
     end
   end
@@ -116,7 +123,8 @@ function Context:UpdateTalentSpellMods()
 
           if spellModList then
             for _, spellModID in pairs(spellModList) do
-              table.insert(spellMods, self.spellModifications.list[spellModID])
+              local spellMod = self.spellModifications.list[spellModID]
+              spellMods[spellMod] = spellMod
             end
           end
         end
@@ -221,7 +229,7 @@ eventListeners.ACTIVE_TALENT_GROUP_CHANGED = onTalentsUpdate
 eventListeners.CHARACTER_POINTS_CHANGED = onTalentsUpdate
 eventListeners.CONFIRM_TALENT_WIPE = onTalentsUpdate
 
-Context.spellModifications = {
+local spellModifications = {
   active = {
     list = {},
     triggers = {},
@@ -855,6 +863,193 @@ Context.spellModifications = {
     },
   }
 }
+
+local tbcSpellModifications = {
+  active = {
+    list = {},
+    triggers = {},
+    sources = {
+      items = {},
+      glyphs = {},
+      talents = {},
+    }
+  },
+  classSources = {
+    ["PRIEST"] = {
+      itemSets = {
+        ["Shadow Tier 6"] = {
+          items = {
+            31061, 31064, 31067, 31070, 31065,
+            34434, 34528, 34563,
+          },
+          setBonuses = {
+            [2] = { 1 },
+          }
+        },
+      },
+      glyphs = {},
+      talents = {
+        tabs = {
+          [3] = {
+            talentIndexes = {
+              [4] = {
+                [1] = { 2 },
+                [2] = { 3 },
+              }
+            }
+          }
+        },
+      },
+    },
+    ["WARLOCK"] = {
+      itemSets = {
+        ["Tier 4"] = {
+          items = {
+            28963, 28968, 28966, 28967, 28964,
+          },
+          setBonuses = {
+            [4] = { 4, 5 },
+          }
+        },
+      },
+      glyphs = {},
+      talents = {},
+    },
+    ["DRUID"] = {
+      itemSets = {
+        ["Balance Tier 6"] = {
+          items = {
+            31043, 31035, 31040, 31046, 31049,
+            34572, 34446, 34555
+          },
+          setBonuses = {
+            [2] = { 6 },
+          }
+        },
+      },
+      glyphs = {},
+      talents = {},
+    },
+    ["MAGE"] = {
+      itemSets = {
+        ["Tier 6"] = {
+          items = {
+            31056, 31055, 31058, 31059, 31057,
+            34574, 34447, 34557,
+          },
+          setBonuses = {
+            [2] = { 7 }
+          }
+        }
+      },
+      glyphs = {},
+      talents = {},
+    },
+    ["SHAMAN"] = {
+      itemSets = {},
+      glyphs = {},
+      talents = {},
+    },
+    ["ROGUE"] = {
+      itemSets = {},
+      glyphs = {},
+      talents = {},
+    },
+    ["HUNTER"] = {
+      itemSets = {},
+      glyphs = {},
+      talents = {},
+    },
+  },
+  list = {
+    [1] = {
+      name = "Spriest T6",
+      id = 38413,
+      type = modTypes.spell,
+      spellIDs = {
+        589, 594, 970,
+        992, 2767, 10892,
+        10893, 10894, 25367,
+        25368,
+      },
+      ticks = 1,
+    },
+    [2] = {
+      name = "Spriest Improved Shadow Word: Pain talent 1 pt.",
+      id = 15275,
+      type = modTypes.spell,
+      spellIDs = {
+        589, 594, 970,
+        992, 2767, 10892,
+        10893, 10894, 25367,
+        25368,
+      },
+      ticks = 1,
+    },
+    [3] = {
+      name = "Spriest Improved Shadow Word: Pain talent 2 pts.",
+      id = 15317,
+      type = modTypes.spell,
+      spellIDs = {
+        589, 594, 970,
+        992, 2767, 10892,
+        10893, 10894, 25367,
+        25368,
+      },
+      ticks = 2,
+    },
+    [4] = {
+      name = "Warlock T4, Corruption",
+      id = 37380,
+      type = modTypes.spell,
+      spellIDs = { -- Corruption
+        172, 6222, 6223,
+        7648, 11671, 11672,
+        25311, 27216, 47812,
+        47813,
+      },
+      ticks = 1,
+    },
+    [5] = {
+      name = "Warlock T4, Immolate",
+      id = 37380,
+      type = modTypes.spell,
+      spellIDs = { -- Immolate
+        348, 707, 1094,
+        2941, 11665, 11667,
+        11668, 25309, 27215,
+        47810, 47811,
+      },
+      ticks = 1,
+    },
+    [6] = {
+      name = "Balance Druid T6",
+      id = 38414,
+      type = modTypes.spell,
+      spellIDs = {
+        8921, 8924, 8925,
+        8926, 8927, 8928,
+        8929, 9833, 9834,
+        9835, 26987, 26988,
+        48462, 48463, 38414,
+      },
+      ticks = 1,
+    },
+    [7] = {
+      name = "Mage T6",
+      id = 38396,
+      type = modTypes.spell,
+      spellIDs = { 12051 },
+      ticks = 1,
+    },
+  }
+}
+
+Context.spellModifications = spellModifications
+
+if isTBC then
+  Context.spellModifications = tbcSpellModifications
+end
 
 Context:InitSpellMods()
 onInit()

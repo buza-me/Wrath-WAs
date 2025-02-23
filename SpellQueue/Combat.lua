@@ -1,8 +1,8 @@
 local LIB_NAME = "SoltiSpellQueueContext"
 LibStub:NewLibrary(LIB_NAME, 1)
 local Context = LibStub(LIB_NAME)
-local GetTime = GetTimePreciseSec or GetTime
 local gameVersionMajorMinor = string.sub(GetBuildInfo(), 1, 3)
+local isTBCC = gameVersionMajorMinor == "2.5"
 
 Context.Timer = LibStub("AceTimer-3.0")
 Context.isOldClient = gameVersionMajorMinor == "2.4" or gameVersionMajorMinor == "3.3"
@@ -81,7 +81,14 @@ function Context:GetNextDebuffTickTime(spellRecord, unitID)
     return 0
   end
 
-  local _, _, _, _, _, _, castTime, minSpellRange, maxSpellRange = GetSpellInfo(spellRecord.spellID)
+  local _, castTime, minSpellRange, maxSpellRange
+
+  if isTBCC then
+    _, _, _, castTime, minSpellRange, maxSpellRange = GetSpellInfo(spellRecord.spellID)
+  else
+    _, _, _, _, _, _, castTime, minSpellRange, maxSpellRange = GetSpellInfo(spellRecord.spellID)
+  end
+
   castTime = castTime or 0
 
   local nextTick = spellAura.expirationTime
@@ -196,6 +203,30 @@ function Context:GetTargetUnitIDs()
   return unitIDs
 end
 
+function Context:GetDebuffTime(unitID, spellID)
+  local debuffDuration, debuffExpirationTime = 0, 0
+
+  if WeakAuras.IsBCC and WeakAuras.IsBCC() then
+    local spellName, icon,
+    count, debuffType, duration,
+    expirationTime, source, isStealable,
+    nameplateShowPersonal, spellId, canApplyAura, isBossDebuff,
+    castByPlayer, nameplateShowAll, timeMod = WA_GetUnitDebuff(unitID, spellID)
+
+    debuffDuration = duration
+    debuffExpirationTime = expirationTime
+  else
+    local spellName,
+    rankText, icon, count, dispelType,
+    duration, expirationTime, source = WA_GetUnitDebuff(unitID, spellID)
+
+    debuffDuration = duration
+    debuffExpirationTime = expirationTime
+  end
+
+  return debuffDuration, debuffExpirationTime
+end
+
 function Context:HandleSpellCastEvents(
     subEvent,
     sourceGUID,
@@ -286,14 +317,7 @@ function Context:HandleSpellAuraEvents(
     return
   end
 
-  local spellName,
-  rankText,
-  icon,
-  count,
-  dispelType,
-  duration,
-  expirationTime,
-  source = WA_GetUnitDebuff(destUnitID, spellID)
+  local duration, expirationTime = self:GetDebuffTime(destUnitID, spellID)
 
   local ticks = spellRecord.ticks
 
@@ -424,12 +448,26 @@ function Context:HandleModEventTriggers(
   self:HandlePendingSpellMods(target, filteredSpellMods)
 end
 
+function Context:GetChanneledSpellDetails()
+  local _, spellName, rankText, startTime, endTime, spellID, spellRecord
+
+  if isTBCC then
+    spellName, rankText, _, startTime, endTime, _, spellID = UnitChannelInfo("player")
+    spellRecord = Context:GetSpellRecord(nil, nil, spellID)
+  else
+    spellName, rankText, _, _, startTime, endTime = UnitChannelInfo("player")
+    spellRecord = Context:GetSpellRecord(spellName, rankText)
+  end
+
+  return startTime, endTime, spellRecord
+end
+
 local eventListeners = Context.eventListeners or {}
 Context.eventListeners = eventListeners
 
 eventListeners.UNIT_SPELLCAST_CHANNEL_START = function()
-  local spellName, rankText, _, _, startTime, endTime = UnitChannelInfo("player")
-  local spellRecord = Context:GetSpellRecord(spellName, rankText)
+  local startTime, endTime, spellRecord = Context:GetChanneledSpellDetails()
+
   local channelingSpellDetails = Context.channelingSpellDetails
 
   if spellRecord then
@@ -443,8 +481,8 @@ eventListeners.UNIT_SPELLCAST_CHANNEL_START = function()
 end
 
 eventListeners.UNIT_SPELLCAST_CHANNEL_UPDATE = function()
-  local spellName, rankText, _, _, startTime, endTime = UnitChannelInfo("player")
-  local spellRecord = Context:GetSpellRecord(spellName, rankText)
+  local startTime, endTime, spellRecord = Context:GetChanneledSpellDetails()
+
   local channelingSpellDetails = Context.channelingSpellDetails
 
   if spellRecord then
