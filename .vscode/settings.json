@@ -108,7 +108,9 @@
     "UnitGroupRolesAssigned",
     "GetComboPoints",
     "GetTimePreciseSec",
-    "GetBuildInfo"
+    "GetBuildInfo",
+    "UnitThreatSituation",
+    "C_NamePlate"
   ],
   "Lua.diagnostics.disable": [
     "duplicate-set-field",

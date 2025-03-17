@@ -9,7 +9,7 @@ function Init()
 
   for index, data in pairs(aura_env.config.blacklistedNames) do
     if data and data.name then
-      aura_env.blacklistedNames[data.name] = true
+      blacklistedNames[data.name] = true
     end
   end
 
