@@ -110,7 +110,8 @@
     "GetTimePreciseSec",
     "GetBuildInfo",
     "UnitThreatSituation",
-    "C_NamePlate"
+    "C_NamePlate",
+    "UnitIsFriend"
   ],
   "Lua.diagnostics.disable": [
     "duplicate-set-field",

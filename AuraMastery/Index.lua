@@ -199,12 +199,8 @@ function Init()
     end
   end
 
-  -- RAID_ROSTER_UPDATE, PARTY_MEMBERS_CHANGED, UNIT_AURA, WA_INIT
+  -- RAID_ROSTER_UPDATE, PARTY_MEMBERS_CHANGED, UNIT_AURA
   function aura_env:Trigger1(event, ...)
-    if event == "WA_INIT" then
-      onInit()
-    end
-
     if event == "UNIT_AURA" then
       onUnitAura(...)
     end
@@ -311,10 +307,18 @@ function Init()
     return allStates
   end
 
+  onInit()
+
+
+
   local trigger2CustomVariables = {
     auraName = "string",
     auraMasterySource = "string",
     problem = "string",
     problemType = "string"
   }
+end
+
+local function TriggerFN(t)
+  return t[2]
 end
